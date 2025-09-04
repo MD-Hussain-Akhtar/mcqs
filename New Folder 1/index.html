@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MCQ Quiz App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f4f4f4;
+      }
+      .quiz-box {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 600px;
+        margin: auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .question {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+      .option {
+        background: #eee;
+        margin: 6px 0;
+        padding: 10px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .option.correct {
+        background: #c8e6c9;
+      }
+      .option.wrong {
+        background: #ffcdd2;
+      }
+      #result {
+        margin-top: 20px;
+      }
+      #downloadBtn {
+        margin-top: 20px;
+        padding: 10px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="quiz-box">
+      <div id="quiz"></div>
+      <div id="result"></div>
+      <button id="downloadBtn" onclick="downloadPDF()">📄 Download PDF</button>
+    </div>
+
+    <script>
+      const questions = [
+        {
+          q: "Why do we use the Work Permit System?",
+          options: [
+            "To renew certificates",
+            "To log accidents",
+            "To prevent accidents",
+            "To monitor contractor working hours",
+          ],
+          answer: 2,
+        },
+        {
+          q: "How long is a work permit issuer or receiver certificate valid?",
+          options: ["90 days", "6 months", "2 years", "a year"],
+          answer: 2,
+        },
+        {
+          q: "Who must sign a work permit issuer or receiver’s certificate?",
+          options: [
+            "The designated representative",
+            "The foreman of issuer or receiver",
+            "The issuer or receiver",
+            "The superintendent of the issuer or receiver",
+          ],
+          answer: 0,
+        },
+        // 👉 बाकी सारे questions इसी format में add कर सकते हो
+      ];
+
+      let current = 0;
+      let score = 0;
+      let wrongAnswers = [];
+      let correctAnswers = [];
+
+      function loadQuestion() {
+        if (current >= questions.length) {
+          showResult();
+          return;
+        }
+        const q = questions[current];
+        let quizDiv = document.getElementById("quiz");
+        quizDiv.innerHTML = `
+    <div class="question">Q${current + 1}. ${q.q}</div>
+    ${q.options
+      .map(
+        (opt, i) =>
+          `<div class="option" onclick="checkAnswer(${i},this)">${opt}</div>`
+      )
+      .join("")}
+  `;
+      }
+
+      function checkAnswer(selected, elem) {
+        const q = questions[current];
+        const options = document.querySelectorAll(".option");
+
+        options.forEach((o, i) => {
+          o.style.pointerEvents = "none"; // disable click after one
+          if (i === q.answer) o.classList.add("correct");
+          if (i === selected && i !== q.answer) o.classList.add("wrong");
+        });
+
+        if (selected === q.answer) {
+          score++;
+          correctAnswers.push({ q: q.q, ans: q.options[selected] });
+        } else {
+          wrongAnswers.push({
+            q: q.q,
+            ans: q.options[selected],
+            correct: q.options[q.answer],
+          });
+        }
+
+        setTimeout(() => {
+          current++;
+          loadQuestion();
+        }, 1000);
+      }
+
+      function showResult() {
+        let resultDiv = document.getElementById("result");
+        let html = `<h2>Result</h2><p>Score: ${score} / ${questions.length}</p>`;
+
+        html += "<h3>Correct Answers:</h3><ol>";
+        correctAnswers.forEach((c) => {
+          html += `<li><b>${c.q}</b><br/>✅ Your Answer: ${c.ans}</li>`;
+        });
+        html += "</ol>";
+
+        html += "<h3>Wrong Answers:</h3><ol>";
+        wrongAnswers.forEach((w) => {
+          html += `<li><b>${w.q}</b><br/>❌ Your Answer: ${w.ans}<br/>✅ Correct Answer: ${w.correct}</li>`;
+        });
+        html += "</ol>";
+
+        resultDiv.innerHTML = html;
+        document.getElementById("downloadBtn").style.display = "block";
+        document.getElementById("quiz").innerHTML = "";
+      }
+
+      function downloadPDF() {
+        const element = document.getElementById("result");
+        const opt = {
+          margin: 0.5,
+          filename: "quiz_results.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+        };
+        html2pdf().set(opt).from(element).save();
+      }
+
+      loadQuestion();
+    </script>
+  </body>
+</html>
